@@ -13,7 +13,9 @@ exports.users = function(req, res) {
             });
         }
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     })
 };
@@ -29,9 +31,18 @@ exports.createUser = function (req, res){
         data = rows;
         if (data.length == 0){
             mysqlConnection.query(query, (err, rows, fields)=> {
-                res.json({
-                    message: `Welcome ${req.body.user_name}`,
-                })
+                if(!err){
+                    res.json({
+                        message: `Welcome ${req.body.user_name}`,
+                    })
+                }
+                
+                else {
+                    
+                    res.status(500).json({
+                        error : "Something Went Wrong! Or Server Error"
+                    })
+                }
             })
         }
 
@@ -67,7 +78,10 @@ exports.updateUser = function (req, res){
                 }
         
                 else{
-                    console.log(err);
+                    
+                    res.status(500).json({
+                        error : "Something Went Wrong! Or Server Error"
+                    })
                 }
             });
 
@@ -101,7 +115,9 @@ exports.deleteUser = function(req, res){
         }
 
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     });
 };

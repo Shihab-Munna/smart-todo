@@ -11,7 +11,9 @@ exports.getNotes = function (req, res){
             });
         }
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     });
     
@@ -30,7 +32,9 @@ exports.createNote = function (req, res) {
         }
 
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     })
 
@@ -50,7 +54,9 @@ exports.updateNote = function(req, res){
         }
 
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     });
 }
@@ -67,7 +73,9 @@ exports.deleteNote = function(req, res){
         }
 
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     });
 }

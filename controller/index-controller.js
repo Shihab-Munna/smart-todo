@@ -12,7 +12,9 @@ exports.allNotes =  function(req, res){
             });
         }
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            });
         }
     });
 }
@@ -30,7 +32,9 @@ exports.allTask = function(req, res){
             });
         }
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            });
         }
     });
 }
@@ -57,7 +61,9 @@ exports.particularTask = function(req, res){
                 }
                
                 else {
-                    console.log(err);
+                    res.status(500).json({
+                        error : "Something Went Wrong! Or Server Error"
+                    })
                 }
             })
         }
@@ -73,7 +79,9 @@ exports.particularTask = function(req, res){
         }
 
         else {
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     })
 

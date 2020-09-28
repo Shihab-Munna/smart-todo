@@ -10,7 +10,9 @@ exports.tasks = function(req, res){
             });
         }
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     })
 };
@@ -28,7 +30,9 @@ exports.addTask = function(req, res){
         }
 
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     })
 
@@ -64,7 +68,9 @@ exports.deleteTask = function(req, res){
         }
 
         else{
-            console.log(err);
+            res.status(500).json({
+                error : "Something Went Wrong! Or Server Error"
+            })
         }
     });
 };
