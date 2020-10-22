@@ -1,81 +1,81 @@
-const noteStore =[];
-const mysqlConnection = require('../connection');
+const db = require('../models')
+const d = new Date();
 
-exports.getNotes = function (req, res){
-    var query = "SELECT * FROM `notes` LIMIT 50"
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: "All Notes",
-                body: rows
-            });
-        }
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
-    });
-    
-}
+exports.getNotes = function(req, res){
+  db.Note.findAll().then(notes => {
+      res.json({
+          message: "All Notes",
+          body: notes
+      })
+  })
+  .catch(err => {
+      res.status(500).json({
+          message: "Error",
+          body: err
+      })
+  })
+};
 
-exports.createNote = function (req, res) {
-    const query = "INSERT INTO `notes` (`user_id`, `note_title`,`note_status`)\
-    VALUES ('"+req.body.user_id+"', '"+req.body.note_title+"','"+req.body.note_status+"')";
 
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: "Note Added",
-                body: req.body
-            });
-        }
-
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
+exports.createNote = function(req, res){
+    db.Note.create({
+        note_title: req.body.note_title,
+        note_status: req.body.note_status,
+        createdAt: d,
+        updatedAt: d,
+        UserId: req.body.userId
+    }).then(result => {
+        res.json({
+            message: "Note Created!!"
+        })
     })
-
-}
+    .catch(err => {
+        res.json({
+            message: "Note Not Created: Error!",
+            body: err
+        })
+    })
+} 
 
 exports.updateNote = function(req, res){
-    const query = "UPDATE `notes`\
-    SET `note_title` = '"+req.body.note_title+"', `note_status` = '"+req.body.note_status+"' \
-    WHERE `note_id` = '"+req.params.id+"'"
+    db.Note.update({
+        note_title: req.body.note_title,
+        note_status: req.body.note_status,
+        updatedAt: d,
 
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: "Note Updated Successfully",
-                body: req.body
-            })
+        
+    },{
+        where : {
+            id: req.params.id
         }
+    }).then(result => {
+        res.json({
+            message: "Note Updated!!",
+        })
 
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
-    });
+    }).catch( err => {
+        res.status(500).json({
+            message: "Something went wrong: Error",
+            body: err
+        })
+    })
 }
 
 exports.deleteNote = function(req, res){
-    var query = "DELETE FROM `notes`\
-    WHERE ((`note_id` = '"+req.params.id+"'))"
-
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: `Note ${req.params.id} Deleted Successfully!`
-            })
+    db.Note.destroy({
+        where: {
+            id: req.params.id
         }
-
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
-    });
+    }).then(result => {
+        res.json({
+            message: "Note deleted Successfully"
+        })
+    }).catch( err => {
+        res.status(500).json({
+            message: "Unable to delete the Note",
+            body: err
+        })
+    })
 }
+
+

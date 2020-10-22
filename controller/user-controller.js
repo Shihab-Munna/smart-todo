@@ -1,117 +1,119 @@
-//const user =[];
-const { connect } = require('../connection');
-const mysqlConnection = require('../connection');
-
+const db = require('../models');
+const d = new Date();
 
 exports.users = function(req, res) {
-    var query = "SELECT * FROM `user` LIMIT 50"
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: "All User",
-                body: rows
-            });
-        }
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
+    db.User.findAll().then(users => {
+        res.json({
+            message: "All Users!",
+            body: users
+        })
+    })
+    .catch(err => {
+        res.staus(500).json({
+            message: "Something Went Wrong",
+            body: err
+        })
     })
 };
 
 exports.createUser = function (req, res){
-   var query_email = "SELECT `email`  FROM `user`\
-   WHERE `email`  =  '"+req.body.email+"'"
-   var query = "INSERT INTO `user` (`user_name`, `email`)\
-   VALUES ('"+req.body.user_name+"', '"+req.body.email+"')";
-  
-   mysqlConnection.query(query_email, (err, rows, fields)=> {
-        var data = [];
-        data = rows;
-        if (data.length == 0){
-            mysqlConnection.query(query, (err, rows, fields)=> {
-                if(!err){
-                    res.json({
-                        message: `Welcome ${req.body.user_name}`,
-                    })
-                }
-                
-                else {
-                    
-                    res.status(500).json({
-                        error : "Something Went Wrong! Or Server Error"
-                    })
-                }
+    db.User.findAll({
+        where: {
+            email: req.body.email
+        }
+    }).then(user => {
+        if(!user.length){
+            db.User.create({
+                user_name: req.body.user_name,
+                email: req.body.email,
+                createdAt: d,
+                updatedAt: d
+            }).then(result => {
+                res.json({
+                    message: `Welcome ${req.body.user_name}!`
+                });
+            })
+            .catch(err => {
+                res.status(400).json({
+                    message: "Error!",
+                    body: err
+                })
+            })
+
+        }
+
+        else{
+            res.status(400).json({
+                message: "This email already been Used Once"
             })
         }
 
-        else {
-            var status_id = 400; 
-            res.status(status_id).json({
-                message: "This email has been used once! Try with another email"
-            })
-        }
-   })
-}; 
+    })
+    .catch(err => {
+        res.status(500).json({
+            message: "Something Went Wrong!",
+            body: err
+        })
+    })
+    
+};
+
 
 exports.updateUser = function (req, res){ 
-
-    const select_user = "SELECT `user_name` FROM `user` \
-    WHERE `user_id` = '"+req.params.id+"'";
-    
-    const query = "UPDATE `user`\
-    \SET `user_name` = '"+req.body.user_name+"',\
-    `email` = '"+req.body.email+"'\
-    WHERE `user_id` = '"+req.params.id+"'";
-
-    mysqlConnection.query(select_user, (err, rows, fields) => {
-        var data = [];
-        data = rows;
-        if( data.length != 0){
-            mysqlConnection.query(query, (err, rows, fields) => {
-                if(!err){
-                    res.json({
-                        message: "User Updated Successfully",
-                        body: req.body
-                    })
-                }
-        
-                else{
-                    
-                    res.status(500).json({
-                        error : "Something Went Wrong! Or Server Error"
-                    })
-                }
-            });
-
+    db.User.findAll({
+        where: {
+            id: req.params.id
         }
-
-        else{
-            var status_id = 404;
-
-            res.status(status_id).json({
-                message: "No User Found!"
+    }).then(user => {
+        if (user.length != 0){
+            db.User.update({
+                user_name: req.body.user_name,
+                email: req.body.email,
+                updatedAt: d
+            }, { where: {
+                id: req.params.id
+            }}).then(result => {
+                res.json({
+                    message: `${req.body.user_name}:Your profile updated Successfully`
+                })
             })
+            .catch(err => {
+                res.status(400).json({
+                    message: "Bad request!",
+                    body: err
+                })
+            })
+        }
+        else{
+            res.status(400).json({
+                message: "No such User"
+            })
+
         }
     })
-};
-
-exports.deleteUser = function(req, res){
-    var query = "DELETE FROM `user`\
-    WHERE ((`user_id` = '"+req.params.id+"'))"
-
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: `User ${req.params.id} Deleted Successfully!`
-            })
+    .catch(err => {
+        res.status(500).json({
+            message: "Error",
+            body: err
+        })
+    })
+ 
+ };
+ 
+ exports.deleteUser = function(req, res){
+     db.User.destroy({ 
+        where:{
+            id: req.params.id
         }
-
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
-    });
-};
+    }).then(result => {
+        res.json({
+            message:"User Removed Successfully!"
+        });
+     })
+    .catch(err => {
+        res.status(500).json({
+            message:"Something went wrong!",
+            body: err
+        })
+    })
+ };

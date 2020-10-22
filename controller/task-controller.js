@@ -1,79 +1,96 @@
-const mysqlConnection = require('../connection');
+const db = require('../models');
+const d = new Date();
 
-exports.tasks = function(req, res){
-    var query = "SELECT * FROM `task` LIMIT 50"
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: "All User",
-                body: rows
-            });
-        }
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
+exports.tasks = function(req, res) {
+    db.Task.findAll().then(tasks => {
+        res.json({
+            message: "All Tasks",
+            body: tasks
+        })
+    }).catch(err => {
+        res.json({
+            message: "Error !!",
+            body: err
+        })
     })
 };
 
 exports.addTask = function(req, res){
-    const query = "INSERT INTO `task` (`task_status`, `note_id`, `task`)\
-    VALUES ('"+req.body.task_status+"', '"+req.body.note_id+"', '"+req.body.task+"')"
-
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: `Task Added under note${req.body.note_id}`,
-                body: req.body
-            })
-        }
-
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
+    db.Task.create({
+        task: req.body.task,
+        task_status: req.body.task_status,
+        createAt: d,
+        updatedAt: d,
+        NoteId: req.body.NoteId
+    }).then(task => {
+        res.json({
+            message: "Task Created Successfully!"
+        })
+    }).catch( err =>{
+        res.status(500).json({
+            message:"Error",
+            body: err
+        })
     })
+}
 
-};
-
-exports.updateTask = function(req, res){
-   const query = "UPDATE `task` SET\
-   `task_id` = '"+req.body.task_id+"',\
-   `note_id` = '"+req.body.note_id+"',\
-   `task` = '"+req.body.task+"',\
-   `task_status` = '"+req.body.task_status+"'\
-    WHERE `task_id` = '"+req.params.id+"'"
-
-   mysqlConnection.query(query, (err, rows, fields) => {
-       if(!err){
-           res.json({
-               message: "Task Updated Successfully",
-               body: req.body
-           })
-       }
-   })
-};
-
-exports.deleteTask = function(req, res){
-    var query = "DELETE FROM `task`\
-    WHERE ((`task_id` = '"+req.params.id+"'))"
-
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: `User ${req.params.id} Deleted Successfully!`
-            })
+ exports.updateTask = function(req, res){
+    db.Task.update({
+        task: req.body.task,
+        task_status: req.body.task_status,
+        updatedAt: d
+    },{
+        where : {
+            id: req.params.id
         }
+    }).then(result => {
+        res.json({
+            message: "Task Updated!!"
+        })
 
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
-    });
+    }).catch( err => {
+        res.status(500).json({
+            message: "Something went wrong: Error",
+            body: err
+        })
+    })
 };
+
+exports.deleteTask = function(req, res) {
+    db.Task.destroy({
+        where: {
+            id: req.params.id
+        }
+    }).then(result => {
+        res.json({
+            message:"Task Removed!!"
+        })
+    }).catch(err => {
+        res.status(500).json({
+            message: "Something went wrong: Error",
+            body: err
+        })
+    })
+}
+
+// exports.deleteTask = function(req, res){
+//     var query = "DELETE FROM `task`\
+//     WHERE ((`task_id` = '"+req.params.id+"'))"
+
+//     mysqlConnection.query(query, (err, rows, fields) => {
+//         if(!err){
+//             res.json({
+//                 message: `User ${req.params.id} Deleted Successfully!`
+//             })
+//         }
+
+//         else{
+//             res.status(500).json({
+//                 error : "Something Went Wrong! Or Server Error"
+//             })
+//         }
+//     });
+// };
 
 
 

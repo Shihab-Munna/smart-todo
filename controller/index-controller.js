@@ -1,88 +1,24 @@
-const mysqlConnection = require('../connection');
+const db = require('../models');
 
-//For user one All notes 
-exports.allNotes =  function(req, res){
-    var query = "SELECT * FROM `notes` WHERE `user_id` = '"+req.params.id+"' LIMIT 50";
-
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: `All Notes For User ${req.params.id}`,
-                body: rows
-            });
-        }
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            });
-        }
-    });
-}
-
-exports.allTask = function(req, res){
-    var query = "SELECT * FROM `task` \
-    WHERE `note_id` = '"+req.params.id+"'\
-    and `task_status` != 'Done'";
-    console.log(req.params.id);
-    mysqlConnection.query(query, (err, rows, fields) => {
-        if(!err){
-            res.json({
-                message: `All Tasks For Node ${req.params.id}`,
-                body: rows
-            });
-        }
-        else{
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            });
-        }
-    });
-}
-
-
-exports.particularTask = function(req, res){
-    
-    var query = "select task.task  from task where\
-    note_id = '"+req.params.note_id+"'  and task_id  = '"+req.params.task_id+"'"
-    var task_exist = "SELECT `task` from `task` WHERE `task_id` = '"+req.params.task_id+"'"
-
-    mysqlConnection.query(task_exist, (err, rows, fields) =>{
-        if(!err){
-            var data = [];
-            data = rows ;
-
-        if (data.length != 0 ){
-            mysqlConnection.query(query, (err, rows, fields) => {
-                if(!err){
-                    res.json({
-                        message: `tasks ${req.params.task_id} from note ${req.params.note_id}`,
-                        body: rows 
-                    })
-                }
-               
-                else {
-                    res.status(500).json({
-                        error : "Something Went Wrong! Or Server Error"
-                    })
-                }
-            })
-        }
-
-        else {
-            var sts = 400;
-
-            res.status(sts).json({
-                message: "No task Found!"
-            })
-        }
-
-        }
-
-        else {
-            res.status(500).json({
-                error : "Something Went Wrong! Or Server Error"
-            })
-        }
+exports.particularUser = function(req, res){
+    db.User.findAll({
+        include:[{
+            model: db.Note,
+            include:[{
+                model: db.Task
+            }]
+        }]
+    }).then(user => {
+        var id = req.params.id;
+        console.log(id);
+        res.json({
+            message: `Note And Task Of ${user[id-1].user_name}`,
+            body:user[id-1]
+        })
+    }).catch(err => {
+        res.status(500).json({
+            message: "Error",
+            body: err
+        })
     })
-
 }
