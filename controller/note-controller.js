@@ -1,6 +1,6 @@
 const db = require('../models')
 const d = new Date();
-
+const Sequelize = require('sequelize');
 exports.getNotes = function(req, res){
   db.Note.findAll().then(notes => {
       res.json({
@@ -78,4 +78,39 @@ exports.deleteNote = function(req, res){
     })
 }
 
+exports.searchNote = function(req, res){
+    db.Note.findAll({
+        where:{
+            [Sequelize.Op.and]: [
+                {
+                    "note_title":{
+                        [Sequelize.Op.like]: '%'+req.body.search+'%'
+                    }
+                },
+                {
+                    "UserId":req.params.id 
+                }
+            ]
+            // note_title:{
+            //     [Sequelize.Op.like]: '%'+req.body.search+'%'
+            // }
+            // UserId: req.params.id
+        }
+    }).then(notes => {
+        if (notes.length != 0){
+            res.json({
+                message: `Note Matched with: ${req.body.search}`,
+                body: notes
+            });
+        }
+        else{
+            res.json({
+                message: `No Note Matched with: ${req.body.search}`
+            });
+        }
+       
+    }).catch( err => {
+        console.log(err);
+    })
+}
 
