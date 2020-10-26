@@ -1,21 +1,21 @@
 const db = require('../models');
 const d = new Date();
 
-exports.tasks = function(req, res) {
+exports.allTasks = function (req, res) {
     db.Task.findAll().then(tasks => {
         res.json({
-            message: "All Tasks",
+            message: "All tasks",
             body: tasks
         })
     }).catch(err => {
-        res.json({
-            message: "Error !!",
+        res.status(500).json({
+            message: "Something Went Wrong :",
             body: err
         })
     })
 };
 
-exports.addTask = function(req, res){
+exports.addTask = function (req, res) {
     db.Task.create({
         task: req.body.task,
         task_status: req.body.task_status,
@@ -26,21 +26,21 @@ exports.addTask = function(req, res){
         res.json({
             message: "Task Created Successfully!"
         })
-    }).catch( err =>{
+    }).catch(err => {
         res.status(500).json({
-            message:"Error",
+            message: "Error",
             body: err
         })
     })
 }
 
- exports.updateTask = function(req, res){
+exports.updateTask = function (req, res) {
     db.Task.update({
         task: req.body.task,
         task_status: req.body.task_status,
         updatedAt: d
-    },{
-        where : {
+    }, {
+        where: {
             id: req.params.id
         }
     }).then(result => {
@@ -48,7 +48,7 @@ exports.addTask = function(req, res){
             message: "Task Updated!!"
         })
 
-    }).catch( err => {
+    }).catch(err => {
         res.status(500).json({
             message: "Something went wrong: Error",
             body: err
@@ -56,14 +56,14 @@ exports.addTask = function(req, res){
     })
 };
 
-exports.deleteTask = function(req, res) {
+exports.deleteTask = function (req, res) {
     db.Task.destroy({
         where: {
             id: req.params.id
         }
     }).then(result => {
         res.json({
-            message:"Task Removed!!"
+            message: "Task Removed!!"
         })
     }).catch(err => {
         res.status(500).json({
@@ -91,6 +91,3 @@ exports.deleteTask = function(req, res) {
 //         }
 //     });
 // };
-
-
-

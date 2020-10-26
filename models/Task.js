@@ -7,7 +7,9 @@ module.exports = (sequelize, DataTypes) => {
 
     static associate(models) {
       // define association here
-      Task.belongsTo(models.Note, { foreignKey: 'NoteId' });
+      Task.belongsTo(models.Note, {
+        foreignKey: 'NoteId'
+      });
     }
   };
   Task.init({

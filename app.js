@@ -10,7 +10,9 @@ var usersRouter = require('./routes/users');
 var noteRouter = require('./routes/note');
 var taskRouter = require('./routes/task');
 var db = require('./models');
-const { sequelize } = require('./models');
+const {
+  sequelize
+} = require('./models');
 
 var app = express();
 
@@ -54,14 +56,14 @@ app.use(function (err, req, res, next) {
 });
 
 sequelize
-.authenticate()
-.then(function(err) {
- console.log('Connection has been established successfully.');
-}, function (err) {
- console.log('Unable to connect to the database:', err);
-});
+  .authenticate()
+  .then(function (err) {
+    console.log('Connection has been established successfully.');
+  }, function (err) {
+    console.log('Unable to connect to the database:', err);
+  });
 
-app.listen(PORT, ()=> {
-    console.log(`Server started on : http://localhost/${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server started on : http://localhost/${PORT}`);
 })
 module.exports = app;
