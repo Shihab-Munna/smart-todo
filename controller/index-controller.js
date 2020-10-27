@@ -59,6 +59,12 @@ exports.logIn = function (req, res) {
             let user = users[0];
             let hashPass = user.password;
             if (bcrypt.compareSync(req.body.password, hashPass)) {
+                if(req.session.viewCount){
+                    req.session.viewCount++;
+                }
+                else{
+                    req.session.viewCount = 1;
+                }
                 let url = `users/${user.id}`
                 res.redirect(url)
 

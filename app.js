@@ -1,20 +1,31 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var bodyParser = require('body-parser');
-var PORT = 5000;
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var noteRouter = require('./routes/note');
-var taskRouter = require('./routes/task');
-var db = require('./models');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const bodyParser = require('body-parser');
+const expressSession = require('express-session');
+const SessionStore = require('express-session-sequelize')(expressSession.Store);
+const PORT = 5000;
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
+const noteRouter = require('./routes/note');
+const taskRouter = require('./routes/task');
+const env = process.env.NODE_ENV || 'development';
+const config = require('./config/config.json')[env];
+const db = require('./models');
 const {
-  sequelize
+  sequelize, Sequelize
 } = require('./models');
 
-var app = express();
+const database = new Sequelize(config);
+
+
+const sequelizeSessionStore = new SessionStore({
+  db: database,
+  expiration: 6000,
+});
+const app = express();
 
 // view engine setup
 // app.set('views', path.join(__dirname, 'views'));
@@ -28,6 +39,17 @@ app.use(express.urlencoded({
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
+
+app.use(expressSession({
+  secret: 'forMunnaKeepItSecret',
+  store: sequelizeSessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie:{
+    maxAge: 60000
+  }
+}));
+
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
