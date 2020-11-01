@@ -1,138 +1,171 @@
 const db = require('../models')
 const d = new Date();
 const Sequelize = require('sequelize');
-exports.getNotes = function (req, res) {
-    db.Note.findAll().then(notes => {
+const { passError } = require('../util/errorhandle');
+
+
+exports.getNotes = async (req, res, next) => {
+    try {
+        var notes = await db.Note.findAll();
+
+        if (notes.length) {
             res.json({
-                message: "All Notes",
-                body: notes
+                message: "All Notes!",
+                Notes: notes
             })
-        })
-        .catch(err => {
-            res.status(500).json({
-                message: "Error",
-                body: err
-            })
-        })
+        } else {
+            throw new passError(404, "No Notes Found!")
+        }
+
+        // next()
+
+    } catch (err) {
+        next(err)
+    }
 };
 
 
-exports.createNote = function (req, res) {
-    db.Note.create({
-            note_title: req.body.note_title,
-            note_status: req.body.note_status,
-            createdAt: d,
-            updatedAt: d,
-            UserId: req.body.userId
-        }).then(result => {
-            res.json({
-                message: "Note Created!!"
-            })
-        })
-        .catch(err => {
-            res.json({
-                message: "Note Not Created: Error!",
-                body: err
-            })
-        })
-}
-
-exports.updateNote = function (req, res) {
-    db.Note.update({
-        note_title: req.body.note_title,
-        note_status: req.body.note_status,
-        updatedAt: d,
-
-
-    }, {
-        where: {
-            id: req.params.id
-        }
-    }).then(result => {
+exports.createNote = async (req, res, next) => {
+    try {
+        var note = await db.Note.create(req.body)
         res.json({
-            message: "Note Updated!!",
+            message: "Note Created!!",
+            Note: note
         })
-
-    }).catch(err => {
-        res.status(500).json({
-            message: "Something went wrong: Error",
-            body: err
-        })
-    })
+        // next()
+    } catch (error) {
+        next(error);
+    }
 }
 
-exports.deleteNote = function (req, res) {
-    db.Note.destroy({
-        where: {
-            id: req.params.id
-        }
-    }).then(result => {
-        res.json({
-            message: "Note deleted Successfully"
-        })
-    }).catch(err => {
-        res.status(500).json({
-            message: "Unable to delete the Note",
-            body: err
-        })
-    })
-}
-
-exports.searchNote = function (req, res) {
-    db.Note.findAll({
-        where: {
-            [Sequelize.Op.and]: [{
-                    "note_title": {
-                        [Sequelize.Op.like]: '%' + req.body.search + '%'
-                    }
-                },
-                {
-                    "UserId": req.params.id
+exports.updateNote = async (req, res, next) => {
+    try {
+        var note = await db.Note.findAll({
+            where: {
+                id: req.params.id
+            }
+        });
+        if (note.length) {
+            await db.Note.update({
+                note_title: req.body.note_title,
+                note_status: req.body.note_status,
+                updatedAt: d,
+            }, {
+                where: {
+                    id: req.params.id
                 }
-            ]
-        }
-    }).then(notes => {
-        if (notes.length != 0) {
+            });
             res.json({
-                message: `Note Matched with: ${req.body.search}`,
-                body: notes
+                message: "Note Updated Successfully",
             });
         } else {
-            res.json({
-                message: `No Note Matched with: ${req.body.search}`
-            });
+
+            throw new passError(400, "No Such Note!");
         }
 
-    }).catch(err => {
-        console.log(err);
-    })
+        // next()
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.deleteNote = async (req, res, next) => {
+    try {
+        var note = await db.Note.findAll({
+            where: {
+                id: req.params.id
+            }
+        });
+        if (note.length) {
+            await db.Note.destroy({
+                where: {
+                    id: req.params.id
+                }
+            });
+            res.json({
+                message: "Note Deleted Successfully"
+            })
+        } else {
+            throw new passError(400, "No Such Note");
+        }
+        // next();
+    } catch (error) {
+        next(error);
+    }
 }
 
-exports.CreateShareLink = function (req, res) {
-    res.json({
-        message: `Share This Link: http://localhost:5000/note/find/${req.params.id}`,
-    })
+
+exports.searchNote = async (req, res, next) => {
+    try {
+        searchResult = await db.Note.findAll({
+            where: {
+                [Sequelize.Op.and]: [{
+                        "note_title": {
+                            [Sequelize.Op.like]: '%' + req.body.search + '%'
+                        }
+                    },
+                    {
+                        "UserId": req.params.id
+                    }
+                ]
+            }
+        });
+
+        if (searchResult.length) {
+            res.json({
+                message: `Note Matched with: ${req.body.search}`,
+                searchResult: searchResult
+            })
+        } else {
+            throw new passError(404, `No Note Matched with: ${req.body.search}`)
+        }
+
+        // next()
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.CreateShareLink = async (req, res, next) => {
+    try {
+        res.json({
+            Shareable_link: `Share This Link: http://localhost:5000/note/find/${req.params.id}`,
+        })
+
+      
+    } catch (error) {
+        next(error);
+    }
+
 };
 
 
-exports.find = function (req, res) {
-    db.Note.findOne({
-        where: {
-            id: req.params.id
-        },
-        include: [{
-            model: db.Task
-        }]
-    }).then(note => {
-        res.json({
-            message: `Note: ${note.note_title} || status : ${note.note_status}`,
-            body: note.Tasks
+exports.find = async (req, res, next) => {
+
+    try {
+        note = await db.Note.findAll({
+            where: {
+                id: req.params.id
+            },
+            include: [{
+                model: db.Task
+            }]
         })
-    }).catch(err => {
-        console.log(err);
-        res.status(500).json({
-            message: 'Something Went Wrong ',
-            body: err
-        })
-    })
+        if (note.length) {
+            res.json({
+                message: `Note: ${note[0].note_title} || status : ${note[0].note_status}`,
+                Note_And_Task: note
+            });
+        } else {
+
+            throw new passError(404, "No Data Found!!");
+        }
+
+        next()
+
+
+    } catch (error) {
+        next(error);
+
+    }
 }

@@ -2,148 +2,195 @@ const db = require('../models');
 const d = new Date();
 const Sequelize = require('sequelize');
 const bcrypt = require('bcrypt');
+const {
+    passError
+} = require('../util/errorhandle');
 
-exports.users = function (req, res) {
-    db.User.findAll().then(users => {
+// get all the users 
+exports.users = async (req, res, next) => {
+    try {
+        var users = await db.User.findAll();
+
+        if (users.length) {
             res.json({
                 message: "All Users!",
-                body: users
+                Users: users
             })
-        })
-        .catch(err => {
-            res.staus(500).json({
-                message: "Something Went Wrong",
-                body: err
-            })
-        })
+        } else {
+            throw new passError(404, "No User Found!")
+        }
+
+    } catch (err) {
+        next(err)
+    }
 };
 
-exports.createUser = function (req, res) {
-    db.User.findAll({
-            where: {
-                email: req.body.email
-            }
-        }).then(user => {
-            if (!user.length) {
-                db.User.create({
-                        user_name: req.body.user_name,
-                        email: req.body.email,
-                        createdAt: d,
-                        updatedAt: d
-                    }).then(result => {
-                        res.json({
-                            message: `Welcome ${req.body.user_name}!`
-                        });
-                    })
-                    .catch(err => {
-                        res.status(400).json({
-                            message: "Error!",
-                            body: err
-                        })
-                    })
-
-            } else {
-                res.status(400).json({
-                    message: "This email already been Used Once"
-                })
-            }
-
-        })
-        .catch(err => {
-            res.status(500).json({
-                message: "Something Went Wrong!",
-                body: err
-            })
-        })
-
-};
-
-
-exports.updateUser = function (req, res) {
-    db.User.findAll({
+// Update a user 
+exports.updateUser = async (req, res, next) => {
+    try {
+        console.log(req.params.id);
+        var user = await db.User.findAll({
             where: {
                 id: req.params.id
             }
-        }).then(user => {
-            if (user.length != 0) {
-                db.User.update({
-                        user_name: req.body.user_name,
-                        email: req.body.email,
-                        password: bcrypt.hashSync(req.body.password, 10),
-                        updatedAt: d
-                    }, {
-                        where: {
-                            id: req.params.id
-                        }
-                    }).then(result => {
-                        res.json({
-                            message: `${req.body.user_name}:Your profile updated Successfully`
-                        })
-                    })
-                    .catch(err => {
-                        res.status(400).json({
-                            message: "Bad request!",
-                            body: err
-                        })
-                    })
-            } else {
-                res.status(400).json({
-                    message: "No such User"
-                })
-
-            }
-        })
-        .catch(err => {
-            res.status(500).json({
-                message: "Error",
-                body: err
-            })
-        })
-
-};
-
-exports.deleteUser = function (req, res) {
-    db.User.destroy({
-            where: {
-                id: req.params.id
-            }
-        }).then(result => {
-            res.json({
-                message: "User Removed Successfully!"
+        });
+        if (user.length != 0) {
+            await db.User.update({
+                user_name: req.body.user_name,
+                email: req.body.email,
+                password: req.body.password,
+                updatedAt: d
+            }, {
+                where: {
+                    id: req.params.id
+                }
             });
-        })
-        .catch(err => {
-            res.status(500).json({
-                message: "Something went wrong!",
-                body: err
+            res.json({
+                message: "User Updated"
             })
-        })
+        } else {
+
+            throw new passError(404, "No User Found!");
+        }
+        next()
+
+    } catch (error) {
+        next(error)
+    }
 };
 
+// Delete a user 
+exports.deleteUser = async (req, res, next) => {
+    try {
+        var user = await db.User.findAll({
+            where: {
+                id: req.params.id
+            }
+        });
+        if (user.length != 0) {
+            await db.User.destroy({
+                where: {
+                    id: req.params.id
+                }
+            });
+            res.json({
+                message: "Deleted User Successfully"
+            })
+        } else {
 
-exports.particularUser = function (req, res) {
-    db.User.findOne({
-        where: {
-            id: req.params.id
-        },
-        include: [{
-            model: db.Note,
+            throw new passError(400, "No User Found!");
+        }
+
+        next()
+    } catch (error) {
+        next(error);
+    }
+};
+
+//get Notes and tasks of a particuler user
+exports.particularUser = async (req, res, next) => {
+
+    try {
+        var alldata = await db.User.findAll({
+            where: {
+                id: req.params.id
+            },
             include: [{
-                model: db.Task
-            }]
-        }],
-    }).then(user => {
-        var id = req.params.id;
-        console.log(id);
-        res.json({
-            message: `Welcome ${user.user_name}`,
-            body: user
-        })
-    }).catch(err => {
-        console.log(err);
-        res.status(500).json({
-            message: "Error",
-            body: err
-        })
-    })
+                model: db.Note,
+                include: [{
+                    model: db.Task
+                }]
+            }],
+        });
+
+
+        if (alldata.length != 0) {
+            res.json({
+                message: `Welcome ${alldata[0].user_name}`,
+                User_with_Notes_and_Tasks: alldata
+            })
+        } else {
+            throw new passError(400, "No User Found!");
+        }
+
+        next();
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// get all task of a particular user
+exports.alltasks = async (req, res, next) => {
+    try {
+        var alldata = await db.User.findAll({
+            where: {
+                id: req.params.id
+            },
+            include: [{
+                model: db.Note,
+                include: [{
+                    model: db.Task
+                }]
+            }],
+        });
+
+        if (alldata.length != 0) {
+            var task = []
+            for (var i = 0; i < alldata[0].Notes.length; i++) {
+                task[i] = alldata[0].Notes[i].Tasks;
+            }
+            if (task.length != 0) {
+                res.json({
+                    message: `All Task for ${alldata[0].user_name}`,
+                    tasks: task
+                })
+            }
+            //console.log(task);
+            else {
+
+                throw new passError(404, "No Task Found ");
+            }
+
+        } else {
+            throw new passError(404, "No Such User!");
+        }
+
+
+        next();
+
+    } catch (error) {
+        next(error);
+    }
+
+}
+//get all notes of a perticuler user 
+exports.notes = async (req, res, next) => {
+    try {
+        var alldata = await db.User.findAll({
+            where: {
+                id: req.params.id
+            },
+            include: [{
+                model: db.Note,
+            }],
+        });
+
+        if (alldata.length != 0) {
+            if (alldata[0].Notes.length != 0) {
+                res.json({
+                    message: `All Notes For user ${alldata[0].user_name}`,
+                    notes: alldata[0].Notes
+                })
+            } else {
+                throw new passError(404, "No Notes Found!")
+            }
+        } else {
+            throw new passError(404, "No Such User")
+        }
+
+        next()
+    } catch (error) {
+        next(error)
+    }
 }

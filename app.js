@@ -5,26 +5,28 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
 const expressSession = require('express-session');
-const SessionStore = require('express-session-sequelize')(expressSession.Store);
+//const SessionStore = require('express-session-sequelize')(expressSession.Store);
 const PORT = 5000;
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const noteRouter = require('./routes/note');
 const taskRouter = require('./routes/task');
+const { errorHandler }= require('./util/errorhandle');
 const env = process.env.NODE_ENV || 'development';
 const config = require('./config/config.json')[env];
 const db = require('./models');
 const {
-  sequelize, Sequelize
+  sequelize,
+  Sequelize
 } = require('./models');
 
 const database = new Sequelize(config);
 
 
-const sequelizeSessionStore = new SessionStore({
-  db: database,
-  expiration: 6000,
-});
+// const sequelizeSessionStore = new SessionStore({
+//   db: database,
+//   expiration: 6000,
+// });
 const app = express();
 
 // view engine setup
@@ -40,41 +42,37 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 
-app.use(expressSession({
-  secret: 'forMunnaKeepItSecret',
-  store: sequelizeSessionStore,
-  resave: false,
-  saveUninitialized: false,
-  cookie:{
-    maxAge: 60000
-  }
-}));
+// app.use(expressSession({
+//   secret: 'forMunnaKeepItSecret',
+//   store: sequelizeSessionStore,
+//   resave: false,
+//   saveUninitialized: false,
+//   cookie: {
+//     maxAge: 60000
+//   }
+// }));
 
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/note', noteRouter);
 app.use('/task', taskRouter);
+
 // app.get("/my-endpoint", function (req, res) {
 //   res.json({
 //     message: "hello world"
 //   });
 // });
 
-// catch 404 and forward to error handler
+//catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
 });
 
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+//error handler
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+app.use(function (err, req, res, next) {
+  errorHandler(err, res);
 });
 
 sequelize

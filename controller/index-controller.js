@@ -1,6 +1,9 @@
 const db = require('../models');
 const Sequelize = require('sequelize');
-const bcrypt = require('bcrypt');
+const { generateJWTToken } = require('../util/jwt');
+const { passError } = require('../util/errorhandle');
+const { validPassword } = require('../util/bcrypt');
+
 
 exports.homePage = function (req, res) {
     res.json({
@@ -8,76 +11,73 @@ exports.homePage = function (req, res) {
     })
 }
 
-exports.singUp = function (req, res) {
-    var matched_users = db.User.findAll({
-        where: {
-            [Sequelize.Op.or]: [{
-                    "user_name": req.body.user_name
-                },
-                {
-                    "email": req.body.email
-                }
-            ]
-        }
-    });
 
-    matched_users.then(users => {
-        if (users.length == 0) {
-            const passwordHash = bcrypt.hashSync(req.body.password, 10);
-            console.log(passwordHash);
-            db.User.create({
-                    user_name: req.body.user_name,
-                    email: req.body.email,
-                    password: passwordHash
-                }).then(user => {
-                    let url = `users/${user.id}`
-                    res.redirect(url)
-                })
-                .catch(err => {
-                    res.status(500).json({
-                        message: "Error",
-                        body: err
-                    })
-                })
-        } else {
-            res.status(400).json({
-                message: `Username or Email already in user!!`
+exports.singUp = async (req, res, next) => {
+    try {
+        var matchedUser = await db.User.findAll({
+            where: {
+                [Sequelize.Op.or]: [{
+                        "user_name": req.body.user_name
+                    },
+                    {
+                        "email": req.body.email
+                    }
+                ]
+            }
+        });
+
+
+        if (matchedUser.length == 0) {
+            user = await db.User.create(req.body);
+            const user_payload = {
+                id: user.id,
+                user_name: user.user_name
+            };
+            const token = generateJWTToken(user_payload);
+            res.json({
+                message: " User Created Successfuylly",
+                token: token
             })
+        } else {
+
+            throw new passError(400, "User Already exist!");
         }
-    })
+
+        
+
+    } catch (err) {
+        next(err);
+    }
 };
 
-exports.logIn = function (req, res) {
-    var UserMatched = db.User.findAll({
-        where: {
-            email: req.body.email
-        }
-    });
-
-    UserMatched.then(users => {
-        if (users.length != 0) {
-            let user = users[0];
-            let hashPass = user.password;
-            if (bcrypt.compareSync(req.body.password, hashPass)) {
-                if(req.session.viewCount){
-                    req.session.viewCount++;
+exports.logIn = async (req, res, next) => {
+    try {
+        var UserMatched = await db.User.findAll({
+            where: {
+                email: req.body.email
+            }
+        });
+        
+        if (UserMatched.length != 0) {
+            if (validPassword(req.body.password, UserMatched[0].password)) {
+                var user = {
+                    id: UserMatched[0].id,
+                    user_name: UserMatched[0].user_name
                 }
-                else{
-                    req.session.viewCount = 1;
-                }
-                let url = `users/${user.id}`
-                res.redirect(url)
-
-            } else {
+                var token = generateJWTToken(user);
                 res.json({
-                    message: "Wrong Password!!"
+                    message: "Login Successfull",
+                    token: token
                 })
+            } else {
+
+                throw new passError(400, "Invalid Password!");
             }
         } else {
-            res.json({
-                message: "Wrong Email! No user for this email"
-            })
+            throw new passError(404, "No User Found!");
         }
-    })
-
+      
+    } catch (err) {
+        next(err)
+    }
 };
