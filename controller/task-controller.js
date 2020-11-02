@@ -1,25 +1,57 @@
 const db = require('../models');
 const d = new Date();
-const {
-    passError
-} = require('../util/errorhandle');
+const {passError} = require('../util/errorhandle');
 
 exports.allTasks = async (req, res, next) => {
     try {
-        var alltask = await db.Task.findAll({
-            include: [{
-                model: db.Note
-            }]
-        });
-        if (alltask.length != 0) {
-            res.json({
-                message: `All Tasks`,
-                Tasks: alltask
-            });
-        } else {
+        if (!(Object.keys(req.query).length === 0)) {
+            if (req.query.user_id) {
+                var noteTask = await db.Note.findAll({where: {UserId: req.query.user_id},
+                include: [{
+                    model: db.Task
+                }]});
+            
+                if (noteTask.length != 0){
+                    var Tasks = [];
+                    for(var i = 0 ; i < noteTask.length ; i++){
+                        Tasks[i] = noteTask[i].Tasks
+                    }
+                    if (Tasks.length != 0) {
+                        res.json({
+                            message: `All Task For User ${req.query.user_id}`,
+                            tasks:  Tasks  
+                        })
+                        
+                    } else {
+                        throw new passError(404, "No Tasks Found For This user");
+                    }
 
-            throw new passError(404, "No tasks Found");
+                    
+                } else {
+
+                    throw new passError(404, "No Tasks Found For This user");
+                }
+
+                
+            } else {
+
+                throw new passError(400, "Query is not right")
+            }
+            
+        } else {
+            var alltask = await db.Task.findAll();
+            if (alltask.length != 0) {
+                res.json({
+                    message: `All Tasks`,
+                    Tasks: alltask
+                });
+            } else {
+    
+                throw new passError(404, "No tasks Found");
+            }
+            
         }
+    
         //next()
     } catch (error) {
         next(error)
@@ -40,7 +72,7 @@ exports.addTask = async (req, res, next) => {
             throw new passError(500, "Something went wrong Failed to create Task");
         }
 
-        next();
+        // next();
 
     } catch (error) {
         next(error);
@@ -78,7 +110,7 @@ exports.updateTask = async (req, res, next) => {
             throw new passError(400, "No Such Task Found");
         }
 
-        next()
+        // next()
     } catch (error) {
         next(error);
 
@@ -106,7 +138,7 @@ exports.deleteTask = async (req, res, next) => {
             throw new passError(400, "No Such Task Found !");
         }
 
-        next()
+        // next()
     } catch (error) {
         next(error);
     }

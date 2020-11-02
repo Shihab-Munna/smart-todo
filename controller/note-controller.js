@@ -161,7 +161,7 @@ exports.find = async (req, res, next) => {
             throw new passError(404, "No Data Found!!");
         }
 
-        next()
+        // next()
 
 
     } catch (error) {
